@@ -1,25 +1,46 @@
 'use client';
-import { useState } from 'react';
-
-const dummy = [
-  { id:1, front:'What is Big O of binary search?', back:'O(log n)', deck:'algorithms' },
-  { id:2, front:'Describe a hashmap collision resolution.', back:'Chaining or open addressing', deck:'algorithms' },
-  { id:3, front:'What is CAP theorem?', back:'Consistency, Availability, Partition tolerance', deck:'systems' },
-  { id:4, front:'What is gradient descent?', back:'Optimization algorithm to minimize loss', deck:'ml' }
-];
+import { useState, useEffect } from 'react';
+import Flashcard from './Flashcard';
 
 export default function Study(){
-  const [idx,setIdx]=useState(0);
-  const [showBack,setShowBack]=useState(false);
-  const card = dummy[idx%dummy.length];
+  const [deckId, setDeckId] = useState('algorithms');
+  const [cards, setCards] = useState([]);
+  const [pos, setPos] = useState(0);
+
+  useEffect(()=>{
+    // load seeded decks
+    fetch('/data/decks.json').then(r=>r.json()).then(d=>{
+      const deck = d.decks.find(x=>x.id===deckId);
+      setCards(deck ? deck.cards : []);
+      setPos(0);
+    }).catch(err=>{ console.error('Failed to load decks',err); });
+  },[deckId]);
+
+  function handleAnswer(correct){
+    // naive SRS: if correct, move card to end; if incorrect, keep near front
+    setCards(prev=>{
+      const current = prev[0];
+      const rest = prev.slice(1);
+      if (correct) return [...rest, current];
+      else return [current, ...rest];
+    });
+    setPos(0);
+  }
+
+  if (cards.length===0) return (<div>No cards loaded.</div>);
+
+  const current = cards[0];
+
   return (<div>
-    <div className="card p-6 rounded shadow">
-      <div className="text-sm text-slate-500">Deck: {card.deck}</div>
-      <h2 className="text-xl font-semibold mt-2">{showBack?card.back:card.front}</h2>
+    <div className="mb-4">
+      <label className="mr-2">Deck:</label>
+      <select value={deckId} onChange={e=>setDeckId(e.target.value)} className="select">
+        <option value="algorithms">Data Structures & Algorithms</option>
+        <option value="systems">Systems Design</option>
+        <option value="ml">AI / ML Basics</option>
+      </select>
     </div>
-    <div className="flex gap-3 mt-4">
-      <button className="btn" onClick={()=>setShowBack(s=>!s)}>{showBack?'Show Front':'Show Back'}</button>
-      <button className="btn" onClick={()=>setIdx(i=>i+1)}>Next</button>
-    </div>
+
+    <Flashcard card={current} onAnswer={handleAnswer} />
   </div>);
 }

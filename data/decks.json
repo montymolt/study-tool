@@ -1,0 +1,29 @@
+{
+  "decks": [
+    {
+      "id": "algorithms",
+      "name": "Data Structures & Algorithms",
+      "cards": [
+        { "id": "a1", "front": "What is Big O of binary search?", "back": "O(log n)" },
+        { "id": "a2", "front": "Describe a hashmap collision resolution.", "back": "Chaining or open addressing" },
+        { "id": "a3", "front": "What's the time complexity of quicksort (average)?", "back": "O(n log n)" }
+      ]
+    },
+    {
+      "id": "systems",
+      "name": "Systems Design",
+      "cards": [
+        { "id": "s1", "front": "What is CAP theorem?", "back": "Consistency, Availability, Partition tolerance" },
+        { "id": "s2", "front": "What's eventual consistency?", "back": "Replicas converge over time; reads may be stale" }
+      ]
+    },
+    {
+      "id": "ml",
+      "name": "AI / ML Basics",
+      "cards": [
+        { "id": "m1", "front": "What is gradient descent?", "back": "Optimization algorithm to minimize loss" },
+        { "id": "m2", "front": "What's overfitting?", "back": "Model fits noise; poor generalization" }
+      ]
+    }
+  ]
+}
