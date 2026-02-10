@@ -1,0 +1,33 @@
+{
+  "decks": [
+    {
+      "id": "algorithms",
+      "name": "Data Structures & Algorithms (Sample)",
+      "cards": [
+        {"id":"a1","front":"What is the time complexity of binary search?","back":"O(log n)"},
+        {"id":"a2","front":"Describe a hashmap collision resolution.","back":"Chaining or open addressing"},
+        {"id":"a3","front":"What's the average time complexity of quicksort?","back":"O(n log n)"},
+        {"id":"a4","front":"What data structure does BFS use?","back":"Queue"},
+        {"id":"a5","front":"What's the Big O of inserting into a balanced BST?","back":"O(log n)"}
+      ]
+    },
+    {
+      "id": "systems",
+      "name": "Systems Design (Sample)",
+      "cards": [
+        {"id":"s1","front":"What is the CAP theorem?","back":"Consistency, Availability, Partition tolerance"},
+        {"id":"s2","front":"What's eventual consistency?","back":"Replicas converge over time; reads may be stale"},
+        {"id":"s3","front":"When to use a CDN?","back":"To cache static assets near users and reduce latency"}
+      ]
+    },
+    {
+      "id": "ml",
+      "name": "AI / ML Basics (Sample)",
+      "cards": [
+        {"id":"m1","front":"What is gradient descent?","back":"Optimization algorithm to minimize loss"},
+        {"id":"m2","front":"What's overfitting?","back":"Model fits noise; poor generalization"},
+        {"id":"m3","front":"What is a learning rate?","back":"Step size used during optimization"}
+      ]
+    }
+  ]
+}
