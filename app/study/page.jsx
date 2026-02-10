@@ -3,53 +3,64 @@ import { useState, useEffect } from 'react';
 import Flashcard from './Flashcard';
 
 const STORAGE_KEY = 'study:srs:v1';
+const DECKS_KEY = 'study:decks:v1';
 
 function loadSrs() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (e) { return {}; }
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; }
 }
-function saveSrs(srs) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(srs)); } catch(e){}
+function saveSrs(srs) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(srs)); } catch(e){} }
+
+function loadLocalDecks(){
+  try{ const raw = localStorage.getItem(DECKS_KEY); return raw?JSON.parse(raw):{} }catch(e){return{}};
+}
+function saveLocalDecks(d){ try{ localStorage.setItem(DECKS_KEY, JSON.stringify(d)); }catch(e){}
 }
 
 export default function Study(){
   const [deckId, setDeckId] = useState('algorithms');
-  const [cards, setCards] = useState([]);
+  const [decks, setDecks] = useState([]);
   const [due, setDue] = useState([]);
   const [srs, setSrs] = useState({});
 
   useEffect(()=>{
-    // load seeded decks and SRS
-    const s = loadSrs();
-    setSrs(s);
+    const s = loadSrs(); setSrs(s);
+    const local = loadLocalDecks();
     fetch('/data/decks.json').then(r=>r.json()).then(d=>{
-      const deck = d.decks.find(x=>x.id===deckId);
-      const list = deck ? deck.cards : [];
-      setCards(list);
-      // compute due cards
-      const now = Date.now();
-      const dueCards = list.filter(c => {
-        const meta = s[c.id];
-        return !meta || (meta.nextReview || 0) <= now;
+      // merge local decks (local overrides)
+      const merged = d.decks.map(dd=>{
+        if (local[dd.id]) return local[dd.id];
+        return dd;
       });
-      setDue(dueCards.length ? dueCards : list.slice());
+      // append any extra local-only decks
+      Object.values(local).forEach(ld=>{
+        if (!merged.find(m=>m.id===ld.id)) merged.push(ld);
+      });
+      setDecks(merged);
+
+      const deck = merged.find(x=>x.id===deckId) || merged[0];
+      if (deck) computeDue(deck.cards || [], s);
     }).catch(err=>{ console.error('Failed to load decks',err); });
   },[deckId]);
 
-  // SM-2-ish update
+  function computeDue(list, s){
+    const now = Date.now();
+    const dueCards = list.filter(c => {
+      const meta = s[c.id];
+      return !meta || (meta.nextReview || 0) <= now;
+    });
+    setDue(dueCards.length ? dueCards : list.slice());
+  }
+
   function updateSrsForCard(cardId, correct) {
     setSrs(prev => {
       const now = Date.now();
       const meta = Object.assign({ ease: 2.5, interval: 1, repetitions: 0, nextReview: now }, prev[cardId] || {});
-      const quality = correct ? 5 : 2; // simplified
+      const quality = correct ? 5 : 2;
       if (quality >= 3) {
         meta.repetitions = (meta.repetitions || 0) + 1;
         if (meta.repetitions === 1) meta.interval = 1;
         else if (meta.repetitions === 2) meta.interval = 6;
         else meta.interval = Math.max(1, Math.round(meta.interval * (meta.ease || 2.5)));
-        // update ease factor
         meta.ease = Math.max(1.3, (meta.ease || 2.5) + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
       } else {
         meta.repetitions = 0;
@@ -68,15 +79,15 @@ export default function Study(){
     if (!due || due.length === 0) return;
     const current = due[0];
     updateSrsForCard(current.id, correct);
-
-    // recompute due list from remaining cards
     setDue(prev => {
       const rest = prev.slice(1);
-      // if correct, push current to end of session queue; if incorrect, keep near front
       if (correct) return [...rest, current];
       else return [current, ...rest];
     });
   }
+
+  const deckOptions = decks.map(d=>({id:d.id,name:d.name || d.id}));
+  const currentDeck = decks.find(d=>d.id===deckId) || decks[0] || {cards:[]};
 
   if (due.length===0) return (<div>No cards loaded.</div>);
   const current = due[0];
@@ -85,11 +96,10 @@ export default function Study(){
     <div className="mb-4">
       <label className="mr-2">Deck:</label>
       <select value={deckId} onChange={e=>setDeckId(e.target.value)} className="select">
-        <option value="algorithms">Data Structures & Algorithms</option>
-        <option value="systems">Systems Design</option>
-        <option value="ml">AI / ML Basics</option>
+        {deckOptions.map(o => (<option key={o.id} value={o.id}>{o.name}</option>))}
       </select>
       <button className="btn ml-4" onClick={()=>{ localStorage.removeItem(STORAGE_KEY); setSrs({}); window.location.reload(); }}>Reset Progress</button>
+      <a className="btn ml-2" href="/study/manage">Manage Decks</a>
     </div>
 
     <Flashcard card={current} onAnswer={handleAnswer} />
